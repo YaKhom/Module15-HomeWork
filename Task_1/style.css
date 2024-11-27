@@ -1,0 +1,11 @@
+.icon-button {
+  padding: 10px;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.icon {
+  width: 24px;
+  height: 24px;
+}

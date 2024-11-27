@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Чат</title>
+    <style>
+        #chat {
+            width: 400px;
+            height: 300px;
+            border: 1px solid black;
+            margin-bottom: 10px;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .message {
+            margin: 5px 0;
+        }
+
+        .sent {
+            color: blue;
+        }
+
+        .received {
+            color: green;
+        }
+
+        #input-container {
+            display: flex;
+            gap: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="chat"></div>
+    <div id="input-container">
+        <input type="text" id="message-input">
+        <button id="send-button">Отправить</button>
+        <button id="geo-button">Геолокация</button>
+    </div>
+    <script>
+        const socket = new WebSocket('wss://echo-ws-service.herokuapp.com');
+        const chat = document.getElementById('chat');
+        const messageInput = document.getElementById('message-input');
+        const sendButton = document.getElementById('send-button');
+        const geoButton = document.getElementById('geo-button');
+
+        // Функция добавления сообщения в чат
+        function addMessage(message, type) {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message', type);
+            messageElement.innerHTML = message;
+            chat.appendChild(messageElement);
+            chat.scrollTop = chat.scrollHeight;
+        }
+
+        // Обработчик отправки сообщения
+        sendButton.addEventListener('click', () => {
+            const message = messageInput.value;
+            if (message) {
+                socket.send(message);
+                addMessage(message, 'sent');
+                messageInput.value = '';
+            }
+        });
+
+        // Обработчик получения сообщения от сервера
+        socket.onmessage = (event) => {
+            addMessage(event.data, 'received');
+        };
+
+        // Обработчик отправки геолокации
+        geoButton.addEventListener('click', () => {
+            if ("geolocation" in navigator) {
+                navigator.geolocation.getCurrentPosition((position) => {
+                    const { latitude, longitude } = position.coords;
+                    const mapLink = `<a href="https://www.openstreetmap.org/#map=18/${latitude}/${longitude}" target="_blank">Моя геолокация</a>`;
+                    addMessage(mapLink, 'sent');
+                    socket.send(`https://www.openstreetmap.org/#map=18/${latitude}/${longitude}`);
+                });
+            } else {
+                addMessage("Геолокация не поддерживается вашим браузером", 'sent');
+            }
+        });
+
+        // Обработчик нажатия Enter для отправки сообщения
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendButton.click();
+            }
+        });
+    </script>
+</body>
+</html>
